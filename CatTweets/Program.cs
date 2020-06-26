@@ -18,6 +18,7 @@ namespace CatTweets
 
         private static TwitterService service = new TwitterService(ConfigurationManager.AppSettings.Get("customerKey"), ConfigurationManager.AppSettings.Get("customerSecretKey"));
 
+
         static void Main(string[] args)
         {
             service.AuthenticateWith(ConfigurationManager.AppSettings.Get("accessToken"), ConfigurationManager.AppSettings.Get("accessSecretToken"));
@@ -40,7 +41,7 @@ namespace CatTweets
                     return gif.data.images.downsized_large.url;
                 }
             }
-            return "<ERROR!!> ";
+            return "<ERROR!!>";
         }
 
         static void sendMediaTweet(string status, string url)
@@ -51,34 +52,52 @@ namespace CatTweets
              */
 
             using (WebClient client = new WebClient())
-            {
-                client.DownloadFile(new Uri(url), randomGif);
+            {   
+                try
+                {
+                    client.DownloadFile(new Uri(url), randomGif);
+                }
+                catch (WebException webEx)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("<ERROR> Downloading file!" + webEx.Message);
+                    Console.ResetColor();
+                }                
             }
 
-            using (var stream = new FileStream(randomGif, FileMode.Open))
+            if(File.Exists(randomGif))
             {
-                var Media = service.UploadMedia(new UploadMediaOptions()
+                using (var stream = new FileStream(randomGif, FileMode.Open))
                 {
-                    Media = new MediaFile()
+                    var Media = service.UploadMedia(new UploadMediaOptions()
                     {
-                        FileName = url,
-                        Content = stream
-                    }
-                });
+                        Media = new MediaFile()
+                        {
+                            FileName = url,
+                            Content = stream
+                        }
+                    });
 
-                List<string> MediaIds = new List<string>();
-                MediaIds.Add(Media.Media_Id);
+                    List<string> MediaIds = new List<string>();
+                    MediaIds.Add(Media.Media_Id);
 
-                service.SendTweet(new SendTweetOptions
-                {
-                    Status = status,
-                    MediaIds = MediaIds
-                });
+                    service.SendTweet(new SendTweetOptions
+                    {
+                        Status = status,
+                        MediaIds = MediaIds
+                    });
+                }
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("Tweet sent!");
+                Console.ResetColor();
             }
-
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Tweet sent!");
-            Console.ResetColor();
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("<ERROR> the gif can not be found!");
+                Console.ResetColor();
+            }           
         }
     }
 }
