@@ -51,6 +51,7 @@ namespace CatTweets
                 using (var stream = req.GetResponse().GetResponseStream())
              */
 
+            //HttpClient is newer so it can be used aswell for NET 4.5+
             using (WebClient client = new WebClient())
             {   
                 try
